@@ -6,6 +6,7 @@ Original template code taken from: https://github.com/KeithGalli/Alexa-Python
 """
 
 from __future__ import print_function
+import datetime
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -81,7 +82,29 @@ def get_ferry_response(intent):
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-        
+
+def get_next_ferry_response(intent):
+    """ If we wanted to initialize the session to have some attributes we could
+    add those here
+    """
+    session_attributes = {}
+    card_title = "Ferry Tracker"
+    
+    arrival_city = intent['slots']['arrival_city']['value']
+
+    d = datetime.datetime.today().weekday()
+
+    if(d <= 5):
+        speech_output = "Weekday!"
+    else:
+        speech_output = "The next ferry to " + arrival_city + " is at "
+    
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))       
 
 
 def handle_session_end_request():
@@ -124,6 +147,8 @@ def on_intent(intent_request, session):
         return get_test_response()
     elif intent_name == "Track_Ferry":
         return get_ferry_response(intent)
+    elif intent_name == "Next_Ferry":
+        return get_next_ferry_response(intent)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
