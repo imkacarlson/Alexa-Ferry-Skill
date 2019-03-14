@@ -6,7 +6,7 @@ Original template code taken from: https://github.com/KeithGalli/Alexa-Python
 """
 
 from __future__ import print_function
-import datetime
+import next_departure
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -92,12 +92,9 @@ def get_next_ferry_response(intent):
     
     arrival_city = intent['slots']['arrival_city']['value']
 
-    d = datetime.datetime.today().weekday()
+    #departure_times = next_departure.next_departure_times()
 
-    if(d <= 5):
-        speech_output = "Weekday!"
-    else:
-        speech_output = "The next ferry to " + arrival_city + " is at "
+    speech_output = "In Progress..."
     
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
@@ -105,7 +102,6 @@ def get_next_ferry_response(intent):
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))       
-
 
 def handle_session_end_request():
     card_title = "Session Ended"
