@@ -7,6 +7,7 @@ Original template code taken from: https://github.com/KeithGalli/Alexa-Python
 
 from __future__ import print_function
 import next_departure
+import datetime
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -92,9 +93,12 @@ def get_next_ferry_response(intent):
     
     arrival_city = intent['slots']['arrival_city']['value']
 
-    #departure_times = next_departure.next_departure_times()
+    departure_times = next_departure.next_departure_times(1)
 
-    speech_output = "In Progress..."
+    datetime_object = datetime.datetime.strptime(departure_times[0], '%H:%M:%S')
+
+
+    speech_output = "The next ferry to " + arrival_city + "is at " + datetime_object.strftime("%I:%M %p")
     
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
