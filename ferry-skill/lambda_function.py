@@ -97,9 +97,10 @@ def get_next_ferry_response(intent):
 
     datetime_object = datetime.datetime.strptime(departure_times[0], '%H:%M:%S')
 
-
-    speech_output = "The next ferry to " + arrival_city + "is at " + datetime_object.strftime("%I:%M %p")
+    speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
     
+    #speech_output = str(datetime.datetime.today())
+
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"

@@ -10,14 +10,15 @@ def next_departure_times(num_future_departures_wanted = 3, departure_terminal = 
     d = datetime.datetime.today()
 
     # Today is a weekday
-    if((d.weekday() >= 1) and (d.weekday() <= 5)):
-        departures = [x for x in departure_times["weekday"] if (int(x.split(":")[0]) >= d.hour and int(x.split(":")[1]) > d.minute)]
+    if((d.weekday() >= 0) and (d.weekday() <= 4)):
+        #departures = [x for x in departure_times["weekday"] if (int(x.split(":")[0]) >= d.hour and int(x.split(":")[1]) > d.minute)]
+        departures = [x for x in departure_times["weekday"] if int(x.split(":")[0]) >= d.hour]
     # Today is a Saturday
-    elif(d.weekday() == 6):
-        departures = [x for x in departure_times["holiday_saturday"] if (int(x.split(":")[0]) >= d.hour and int(x.split(":")[1]) > d.minute)]
+    elif(d.weekday() == 5):
+        departures = [x for x in departure_times["holiday_saturday"] if int(x.split(":")[0]) >= d.hour]
     # Today is a Sunday
-    elif(d.weekday() == 7):
-        departures = [x for x in departure_times["sunday"] if (int(x.split(":")[0]) >= d.hour and int(x.split(":")[1]) > d.minute)]
+    elif(d.weekday() == 6):
+        departures = [x for x in departure_times["sunday"] if int(x.split(":")[0]) >= d.hour]
 
 
     if(len(departures) < 3):
@@ -32,6 +33,3 @@ def next_departure_times(num_future_departures_wanted = 3, departure_terminal = 
             return (departures + list(departure_times["weekday"][0:(num_future_departures_wanted - len(departures))]))
 
     return departures[0:num_future_departures_wanted]
-
-
-print(next_departure_times())      
