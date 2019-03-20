@@ -7,7 +7,7 @@ def next_departure_times(num_future_departures_wanted = 3, departure_terminal = 
     
     # holidays = []
     
-    d = datetime.datetime.today()
+    d = datetime.datetime.today() - datetime.timedelta(hours = 7)
     print(d)
 
     # Today is a weekday
@@ -17,9 +17,11 @@ def next_departure_times(num_future_departures_wanted = 3, departure_terminal = 
     # Today is a Saturday
     elif(d.weekday() == 5):
         departures = [x for x in departure_times["holiday_saturday"] if int(x.split(":")[0]) >= d.hour]
+        departures = [x for x in departures if (departure_time_to_timestamp(x, d) > d)]
     # Today is a Sunday
     elif(d.weekday() == 6):
         departures = [x for x in departure_times["sunday"] if int(x.split(":")[0]) >= d.hour]
+        departures = [x for x in departures if (departure_time_to_timestamp(x, d) > d)]
 
 
     if(len(departures) < 3):
