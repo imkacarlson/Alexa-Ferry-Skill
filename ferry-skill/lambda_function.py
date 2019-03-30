@@ -100,6 +100,8 @@ def get_next_ferry_response(intent):
 
     speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
     
+    print(invoke_model.getPrediction())
+
     #speech_output = str(datetime.datetime.today())
 
     # If the user either does not reply to the welcome message or says something
