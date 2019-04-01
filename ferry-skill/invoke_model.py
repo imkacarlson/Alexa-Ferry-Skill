@@ -10,8 +10,8 @@ def getPrediction():
     response = client.invoke_endpoint(
         EndpointName=endpoint_name,
         Body=prediction_data,
-        ContentType='application/json',
-        Accept='string'#,
+        ContentType='application/json'#,
+        #Accept='string'#,
         #CustomAttributes='string'
     )
 
