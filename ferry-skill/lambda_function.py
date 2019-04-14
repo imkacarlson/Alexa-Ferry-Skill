@@ -10,6 +10,8 @@ import next_departure
 import datetime
 import invoke_model
 
+import re
+
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -100,7 +102,9 @@ def get_next_ferry_response(intent):
 
     speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
     
-    print(invoke_model.getPrediction())
+    #print(invoke_model.getPrediction())
+
+    print(speech_output)
 
     #speech_output = str(datetime.datetime.today())
 
