@@ -95,16 +95,25 @@ def get_next_ferry_response(intent):
     card_title = "Ferry Tracker"
     
     arrival_city = intent['slots']['arrival_city']['value']
+    
+    if "value" in intent['slots']['num_departures'].keys():
+        num_departures = intent['slots']['num_departures']["value"]
+        departure_times = next_departure.next_departure_times(int(num_departures))
+        
+        departures_speech = ""
+        for departure in departure_times:
+            datetime_object = datetime.datetime.strptime(departure, '%H:%M:%S')
+            departures_speech = departures_speech + datetime_object.strftime("%I:%M %p") + ", "
 
-    departure_times = next_departure.next_departure_times(1)
-
-    datetime_object = datetime.datetime.strptime(departure_times[0], '%H:%M:%S')
-
-    speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
+        speech_output = ("The next " + str(num_departures) + " ferries to Seattle are at " + departures_speech[:-11] + " and" + departures_speech[-11:])[:-2] + "."
+    else:
+        departure_times = next_departure.next_departure_times(1)
+        datetime_object = datetime.datetime.strptime(departure_times[0], '%H:%M:%S')
+        speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
     
     #print(invoke_model.getPrediction())
 
-    print(speech_output)
+    #print(speech_output)
 
     #speech_output = str(datetime.datetime.today())
 

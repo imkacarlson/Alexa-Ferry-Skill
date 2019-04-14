@@ -1,42 +1,52 @@
 import json
 import datetime
 
-def next_departure_times(num_future_departures_wanted = 3, departure_terminal = "bainbridge", arrival_terminal = 'seattle'):
-    with open('bainbridge_departures_2013.json') as f:
-        departure_times = json.loads(json.load(f))[departure_terminal]
-    
-    # holidays = []
-    
-    d = datetime.datetime.today() - datetime.timedelta(hours = 7)
-    print(d)
+def next_departure_times(num_future_departures_wanted = 3, departure_terminal = "bainbridge", arrival_terminal = 'seattle', d = datetime.datetime.today()):
 
+    with open('ferry_departure_schedule.json') as f:
+        departure_times = json.loads(json.load(f))[departure_terminal]
+
+    weekday_departures = departure_times["weekday"]
+    saturday_departures = departure_times["holiday_saturday"]
+    sunday_departures = departure_times["sunday"]
+
+    return generate_list(num_future_departures_wanted, departure_terminal, arrival_terminal, d, weekday_departures, saturday_departures, sunday_departures)
+
+def first_future_instance(departures, d):
+    i = 0
+    for time in departures:
+        if(not datetime.datetime.strptime(time, "%H:%M:%S").replace(year = d.year, month = d.month, day = d.day) > d):
+            i = i + 1
+        else:
+            break
+
+    return i
+    
+
+def generate_list(num_future_departures_wanted, departure_terminal, arrival_terminal, d, weekday_departures, 
+saturday_departures, sunday_departures):
+    # holidays = []
+    departures = []
+    
     # Today is a weekday
     if((d.weekday() >= 0) and (d.weekday() <= 4)):
-        departures = [x for x in departure_times["weekday"] if int(x.split(":")[0]) >= d.hour]
-        departures = [x for x in departures if (departure_time_to_timestamp(x, d) > d)]
+        i = first_future_instance(weekday_departures, d)
+        departures = weekday_departures[i:][:num_future_departures_wanted]
     # Today is a Saturday
     elif(d.weekday() == 5):
-        departures = [x for x in departure_times["holiday_saturday"] if int(x.split(":")[0]) >= d.hour]
-        departures = [x for x in departures if (departure_time_to_timestamp(x, d) > d)]
+        i = first_future_instance(saturday_departures, d)
+        departures = saturday_departures[i:][:num_future_departures_wanted]
     # Today is a Sunday
     elif(d.weekday() == 6):
-        departures = [x for x in departure_times["sunday"] if int(x.split(":")[0]) >= d.hour]
-        departures = [x for x in departures if (departure_time_to_timestamp(x, d) > d)]
+        i = first_future_instance(sunday_departures, d)
+        departures = sunday_departures[i:][:num_future_departures_wanted]
+        
+    while(len(departures) < num_future_departures_wanted):
+        if departures:
+            hours, minutes, seconds = departures[-1].split(":")
+            d = (d + datetime.timedelta(days = 1)).replace(hour = int(hours), minute = int(minutes))
+        else:
+            d = (d + datetime.timedelta(days = 1)).replace(hour = 0, minute = 0)
 
-
-    if(len(departures) < 3):
-        # Tomorrow is a Saturday
-        if((d.weekday()) + 1 == 5):
-            return(departures + list(departure_times["holiday_saturday"][0:(num_future_departures_wanted - len(departures))]))
-        #Tomorrow is a Sunday
-        elif(d.weekday() + 1 == 6):
-            return (departures + list(departure_times["sunday"][0:(num_future_departures_wanted - len(departures))]))
-        # Tomorrow is a Monday
-        elif(d.weekday() + 1 == 7):
-            return (departures + list(departure_times["weekday"][0:(num_future_departures_wanted - len(departures))]))
-
-    return departures[0:num_future_departures_wanted]
-
-def departure_time_to_timestamp(departure_time, today):
-    hour_min = departure_time.split(":")
-    return today.replace(hour = int(hour_min[0]), minute = int(hour_min[1]))
+        departures = departures + generate_list(num_future_departures_wanted - len(departures), departure_terminal, arrival_terminal, d, weekday_departures, saturday_departures, sunday_departures)
+    return departures
