@@ -3,7 +3,7 @@ import datetime
 import json
 import re
 
-api_access_code         = "c44a23a4-aa03-4df4-b49c-e2939faf1d62"
+api_access_code         = "######"
 bainbridge_terminal_id  = 3 # Bainbridge Island
 seattle_terminal_id     = 7 # Seattle
 
@@ -46,7 +46,7 @@ def get_schedule(date, departing_terminal_id, arriving_terminal_id):
     
     for departure in response_text_json["TerminalCombos"][0]["Times"]:
         time = extract_milliseconds(departure["DepartingTime"])
-        timestamps.append(milliseconds_to_time(time))
+        timestamps.append(milliseconds_to_time(time).strftime('%H:%M:%S'))
     
     return timestamps
 
@@ -54,12 +54,15 @@ weekday_departures      = get_schedule(weekday, bainbridge_terminal_id, seattle_
 saturday_departures     = get_schedule(saturday, bainbridge_terminal_id, seattle_terminal_id)
 sunday_departures       = get_schedule(sunday, bainbridge_terminal_id, seattle_terminal_id)
 
-weekday_next_day = sum([1 for time in weekday_departures if (time.day == int(weekday.split("-")[2]) + 1)])
+bainbrigde_data = {}
+bainbrigde_data["weekday"] = weekday_departures
+bainbrigde_data["holiday_saturday"] = saturday_departures
+bainbrigde_data["sunday"] = sunday_departures
 
-#combined = weekday_departures + saturday_departures + sunday_departures
+data = {}
+data["bainbridge"] = bainbrigde_data
 
-#complete_weekday_departures = sorted([time.strftime('%H:%M:%S') for time in combined if (time.day == int(weekday.split("-")[2]) or 
-#time.day == int(weekday.split("-")[2]) + 1)])
+json_data = json.dumps(data)
 
-print(weekday_next_day)
-
+with open ('ferry_departure_schedule.json', 'w') as outfile:
+    json.dump(json_data, outfile)
