@@ -102,14 +102,12 @@ def get_next_ferry_response(intent):
         
         departures_speech = ""
         for departure in departure_times:
-            datetime_object = datetime.datetime.strptime(departure, '%H:%M:%S')
-            departures_speech = departures_speech + datetime_object.strftime("%I:%M %p") + ", "
+            departures_speech = departures_speech + departure.strftime("%I:%M %p") + ", "
 
         speech_output = ("The next " + str(num_departures) + " ferries to Seattle are at " + departures_speech[:-11] + " and" + departures_speech[-11:])[:-2] + "."
     else:
         departure_times = next_departure.next_departure_times(1)
-        datetime_object = datetime.datetime.strptime(departure_times[0], '%H:%M:%S')
-        speech_output = "The next ferry to " + arrival_city + " is at " + datetime_object.strftime("%I:%M %p")
+        speech_output = "The next ferry to " + arrival_city + " is at " + departure_times[0].strftime("%I:%M %p")
     
     #print(invoke_model.getPrediction())
 
