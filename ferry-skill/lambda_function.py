@@ -11,6 +11,8 @@ import datetime
 import invoke_model
 
 import re
+import boto3
+import json
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -95,19 +97,28 @@ def get_next_ferry_response(intent):
     card_title = "Ferry Tracker"
     
     arrival_city = intent['slots']['arrival_city']['value']
+
+
+    lambda_client = boto3.client('lambda')
     
     if "value" in intent['slots']['num_departures'].keys():
         num_departures = intent['slots']['num_departures']["value"]
-        departure_times = next_departure.next_departure_times(int(num_departures))
+        params = {'departures':int(num_departures)}
+        lambda_response = lambda_client.invoke(FunctionName = "next-departure", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        departure_times = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
         
         departures_speech = ""
         for departure in departure_times:
+            departure = datetime.datetime.strptime(departure, "%H:%M:%S")
             departures_speech = departures_speech + departure.strftime("%I:%M %p") + ", "
 
         speech_output = ("The next " + str(num_departures) + " ferries to Seattle are at " + departures_speech[:-11] + " and" + departures_speech[-11:])[:-2] + "."
     else:
-        departure_times = next_departure.next_departure_times(1)
-        speech_output = "The next ferry to " + arrival_city + " is at " + departure_times[0].strftime("%I:%M %p")
+        params = {'departures': 1}
+        lambda_response = lambda_client.invoke(FunctionName = "next-departure", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        departure_times = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
+        departure = datetime.datetime.strptime(departure_times[0], "%H:%M:%S")
+        speech_output = "The next ferry to " + arrival_city + " is at " + departure.strftime("%I:%M %p")
     
     #print(invoke_model.getPrediction())
 
