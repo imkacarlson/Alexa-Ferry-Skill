@@ -1,10 +1,18 @@
 import json
 import datetime
+import boto3
 
 def next_departure_times(num_future_departures_wanted = 3, departure_terminal = "bainbridge", arrival_terminal = 'seattle', d = datetime.datetime.today() - datetime.timedelta(hours = 7)):
 
-    with open('ferry_departure_schedule.json') as f:
-        departure_times = json.loads(json.load(f))[departure_terminal]
+    bucket_name = "#####"
+
+    s3_client = boto3.client('s3')
+    s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_ferry_departure_schedule.json")
+    object_content = s3_response_object['Body'].read().decode('utf-8')
+    departure_times = json.loads(object_content)
+
+    # Not sure right now why I have to do this twice
+    departure_times = json.loads(departure_times)[departure_terminal]
 
     weekday_departures = departure_times["weekday"]
     saturday_departures = departure_times["holiday_saturday"]
