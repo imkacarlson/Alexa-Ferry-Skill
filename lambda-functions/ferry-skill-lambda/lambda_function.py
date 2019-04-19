@@ -6,7 +6,6 @@ Original template code taken from: https://github.com/KeithGalli/Alexa-Python
 """
 
 from __future__ import print_function
-import next_departure
 import datetime
 import invoke_model
 
@@ -64,24 +63,6 @@ def get_welcome_response():
     session_attributes = {}
     card_title = "Welcome"
     speech_output = "Welcome to your personal ferry tracker!"
-    # If the user either does not reply to the welcome message or says something
-    # that is not understood, they will be prompted again with this text.
-    reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"
-    should_end_session = False
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-        
-def get_ferry_response(intent):
-    """ If we wanted to initialize the session to have some attributes we could
-    add those here
-    """
-    session_attributes = {}
-    card_title = "Ferry Tracker"
-    
-    departure_city = intent['slots']['departure_city']['value']
-    arrival_city = intent['slots']['arrival_city']['value']
-    
-    speech_output = "It looks like you want to depart from " + departure_city + " and arrive in " + arrival_city
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"
@@ -171,8 +152,6 @@ def on_intent(intent_request, session):
     # Dispatch to your skill's intent handlers
     if intent_name == "test":
         return get_test_response()
-    elif intent_name == "Track_Ferry":
-        return get_ferry_response(intent)
     elif intent_name == "Next_Ferry":
         return get_next_ferry_response(intent)
     elif intent_name == "AMAZON.HelpIntent":
