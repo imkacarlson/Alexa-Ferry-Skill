@@ -7,7 +7,7 @@ def lambda_handler(event, context):
     return {'departures': next_departure_times(num_departures)}
 
 
-def next_departure_times(num_future_departures_wanted = 3, departure_terminal = "bainbridge", arrival_terminal = 'seattle', d = datetime.datetime.today() - datetime.timedelta(hours = 7)):
+def next_departure_times(num_future_departures_wanted = 3, departure_terminal = "bainbridge", arrival_terminal = 'seattle', d = datetime.datetime.now() - datetime.timedelta(hours = 7)):
 
     bucket_name = "#####"
 
@@ -16,7 +16,6 @@ def next_departure_times(num_future_departures_wanted = 3, departure_terminal = 
     object_content = s3_response_object['Body'].read().decode('utf-8')
     departure_times = json.loads(object_content)
 
-    # Not sure right now why I have to do this twice
     departure_times = json.loads(departure_times)[departure_terminal]
 
     weekday_departures = departure_times["weekday"]
@@ -41,7 +40,13 @@ def first_future_instance(departures, d):
         else:
             break
 
-    return i
+    # Deals with the case where it is like 10 PM and the next departure is at 12:55 AM the next day.
+    # In this case we have looped through the entire list and we increment i to be sure we take no
+    # departures from that day.
+    if i == len(departures):
+        return i+1
+    else:
+        return i
     
 
 def generate_list(num_future_departures_wanted, departure_terminal, arrival_terminal, d, weekday_departures, 
