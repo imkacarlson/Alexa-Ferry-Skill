@@ -2,16 +2,22 @@ import json
 import boto3
 import json
 import datetime
+from statistics import mean
 
 bucket_name = "#####"
 bainbridge_predictions_file_name = "bainbridge_ferry_predictions.json"
 
 def lambda_handler(event, context):
-    departures = event["departures"]
-    return {
-        'departures' : departures,
-        'predictions': get_predictions(departures)
-    }
+    if "departures" in event.keys():
+        departures = event["departures"]
+        return {
+            'departures' : departures,
+            'predictions': get_predictions(departures)
+        }
+    else:
+        return {
+            'next_four_hours': next_four_hours()
+        }
 
 def getPrediction(starting_date, target):
     endpoint_name = "bainbridge-ferry-predictor"
@@ -29,8 +35,6 @@ def getPrediction(starting_date, target):
     return response
 
 def make_prediction_write_to_s3(starting_date):
-    s3_data_path = "{}/bainbridge_predictions".format(bucket_name)
-
     # Getting target values
     s3_client = boto3.client('s3')
     s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_data.json")
@@ -55,8 +59,7 @@ def make_prediction_write_to_s3(starting_date):
     s3 = boto3.resource("s3")
     s3.Bucket(bucket_name).put_object(Key="bainbridge_predictions/"+bainbridge_predictions_file_name, Body=predictions_json)
     
-def get_predictions(scheduled_departures):
-    today = datetime.datetime.today()
+def get_predictions(scheduled_departures, today = datetime.datetime.now() - datetime.timedelta(hours = 7)):
     
     s3_client = boto3.client('s3')
     s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_predictions/"+bainbridge_predictions_file_name)
@@ -74,18 +77,21 @@ def get_predictions(scheduled_departures):
     
     for i in range(len(scheduled_departures)):
         scheduled_departure = datetime.datetime.strptime(scheduled_departures[i], '%H:%M:%S').replace(year = today.year, month = today.month, day = today.day)
+        if today.hour > scheduled_departure.hour:
+            scheduled_departure = scheduled_departure + datetime.timedelta(days = 1)
+            today = scheduled_departure
         if (scheduled_departure < starting_date or scheduled_departure > ending_date):
             make_prediction_write_to_s3(scheduled_departure.replace(hour = 0, minute = 0, second = 0).strftime('%Y-%m-%d %H:%M:%S'))
-            return predictions_to_return + get_predictions(scheduled_departures[i:])          
+            return predictions_to_return + get_predictions(scheduled_departures[i:], today)          
         
         # Number of 5 minute intervals are in between the two dates
         index = int((scheduled_departure - starting_date).seconds / (5*60))
         
-        at_date = at_date + datetime.timedelta(minutes = (5 * index))
+        at_date = starting_date + datetime.timedelta(minutes = (5 * index))
         
         if(at_date > ending_date):
             make_prediction_write_to_s3(at_date.replace(hour = 0, minute = 0, second = 0).strftime('%Y-%m-%d %H:%M:%S'))
-            return predictions_to_return + get_predictions(scheduled_departures[i:])  
+            return predictions_to_return + get_predictions(scheduled_departures[i:], today)  
         else:
             if index < len(predictions):
                 predictions_to_return.append(predictions[index])
@@ -94,3 +100,29 @@ def get_predictions(scheduled_departures):
                 return
             
     return predictions_to_return
+
+def next_four_hours():
+    # 5 minute intervals in 4 hours
+    four_hours = (60/5) * 4
+    
+    today = datetime.datetime.now()
+    
+    s3_client = boto3.client('s3')
+    s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_predictions/"+bainbridge_predictions_file_name)
+    object_content = s3_response_object['Body'].read().decode('utf-8')
+    predictions_json = json.loads(object_content)
+    predictions = predictions_json["predictions"]
+    
+    starting_date = datetime.datetime.strptime(predictions_json["start_date"], '%Y-%m-%d %H:%M:%S')
+    
+    if starting_date.day > today.day:
+        make_prediction_write_to_s3((starting_date - datetime.timedelta(days = 1)).strftime('%Y-%m-%d %H:%M:%S'))
+        return next_four_hours()
+    elif starting_date.day < today.day:
+        make_prediction_write_to_s3((starting_date + datetime.timedelta(days = 1)).strftime('%Y-%m-%d %H:%M:%S'))
+        return next_four_hours()
+    
+    # Number of 5 minute intervals we are into the day
+    index = int((today - starting_date).seconds / (5*60))
+    
+    return mean(predictions[index:(index + int(four_hours))])

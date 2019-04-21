@@ -7,7 +7,6 @@ Original template code taken from: https://github.com/KeithGalli/Alexa-Python
 
 from __future__ import print_function
 import datetime
-import invoke_model
 
 import re
 import boto3
@@ -75,13 +74,13 @@ def get_next_ferry_response(intent):
     add those here
     """
     session_attributes = {}
-    card_title = "Ferry Tracker"
+    card_title = "Next Ferry"
     
     arrival_city = intent['slots']['arrival_city']['value']
 
-
     lambda_client = boto3.client('lambda')
-    
+
+    speech_output = ""
     if "value" in intent['slots']['num_departures'].keys():
         num_departures = intent['slots']['num_departures']["value"]
         params = {'departures':int(num_departures)}
@@ -100,19 +99,100 @@ def get_next_ferry_response(intent):
         departure_times = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
         departure = datetime.datetime.strptime(departure_times[0], "%H:%M:%S")
         speech_output = "The next ferry to " + arrival_city + " is at " + departure.strftime("%I:%M %p")
-    
-    #print(invoke_model.getPrediction())
-
-    #print(speech_output)
-
-    #speech_output = str(datetime.datetime.today())
 
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"
+    reprompt_text = "Ask me when the next ferry to Seattle is."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))       
+
+def get_track_ferry_response(intent):
+    d = datetime.datetime.now()
+    session_attributes = {}
+    card_title = "Next Ferry"
+    
+    arrival_city = intent['slots']['arrival_city']['value']
+
+    lambda_client = boto3.client('lambda')
+
+    speech_output = ""
+    
+    # Reused code 
+    if "value" in intent['slots']['num_departures'].keys():
+        num_departures = intent['slots']['num_departures']["value"]
+        params = {'departures':int(num_departures)}
+        lambda_response = lambda_client.invoke(FunctionName = "next-departure", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        departure_times = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
+
+        params = {'departures':departure_times}
+        lambda_response = lambda_client.invoke(FunctionName = "make-predictions", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        predictions = json.loads(lambda_response['Payload'].read().decode('utf-8'))
+
+        predictions_speech = ""
+        for i in range(len(predictions["predictions"])):
+            departure_time = datetime.datetime.strptime(predictions["departures"][i], "%H:%M:%S").replace(year = d.year, month = d.month, day = d.day)
+            predictied_time = int(predictions["predictions"][i])
+
+            if abs(predictied_time < 60):
+                predictions_speech = predictions_speech + "The " + departure_time.strftime("%I:%M %p") + " departure is predicted to depart on time. "
+            else:
+                minutes_late = int(abs(predictied_time / 60))
+                if predictied_time < 0:
+                    predictions_speech = predictions_speech + "The " + departure_time.strftime("%I:%M %p") + " departure is predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " early. "
+                else:
+                    predictions_speech = predictions_speech + "The " + departure_time.strftime("%I:%M %p") + " departure is predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " late. "
+        speech_output = predictions_speech[:-1]
+    else:
+        params = {'departures':1}
+        lambda_response = lambda_client.invoke(FunctionName = "next-departure", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        departure_times = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
+        departure = datetime.datetime.strptime(departure_times[0], "%H:%M:%S").replace(year = d.year, month = d.month, day = d.day)
+
+        params = {'departures':departure_times}
+        lambda_response = lambda_client.invoke(FunctionName = "make-predictions", InvocationType = "RequestResponse", Payload = json.dumps(params))
+        predictions = json.loads(lambda_response['Payload'].read().decode('utf-8'))
+        predicted_time = int(predictions['predictions'][0])
+        minutes_late = int(abs(predicted_time / 60))
+
+        if abs(predicted_time) < 60:
+            speech_output = "The " + departure.strftime("%I:%M %p") + " departure to " + arrival_city + " is predicted to be on time."
+        else:
+            if predictions['predictions'][0] < 0:
+                speech_output = "The " + departure.strftime("%I:%M %p") + " departure to " + arrival_city + " is predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " early."
+            else:
+                speech_output = "The " + departure.strftime("%I:%M %p") + " departure to " + arrival_city + " is predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " late."
+
+    reprompt_text = "Ask me to make a prediction about the next ferry to Seattle"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))    
+
+def get_four_hour_trend_response():
+    session_attributes = {}
+    card_title = "Four Hour Trend"
+
+    lambda_client = boto3.client('lambda')
+    params = {}
+    lambda_response = lambda_client.invoke(FunctionName = "make-predictions", InvocationType = "RequestResponse", Payload = json.dumps(params))
+    four_hour_average = int(json.loads(lambda_response['Payload'].read().decode('utf-8'))["next_four_hours"])
+
+    speech_output = ""
+
+    if abs(four_hour_average) < 60:
+        speech_output = "Over the next four hours, departures to Seattle are predicted to be on time."
+    else:
+        minutes_late = int(abs(four_hour_average / 60))
+        if four_hour_average < 0:
+            speech_output = "Over the next four hours, departures to Seattle are predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " early."
+        else:
+            speech_output = "Over the next four hours, departures to Seattle are predicted to be " + str(minutes_late) + (" minutes" if minutes_late > 1 else " minute") + " late."
+
+    reprompt_text = "Ask me what the future trend of departures to Seattle is."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))   
+
 
 def handle_session_end_request():
     card_title = "Session Ended"
@@ -154,6 +234,10 @@ def on_intent(intent_request, session):
         return get_test_response()
     elif intent_name == "Next_Ferry":
         return get_next_ferry_response(intent)
+    elif intent_name == "Track_Ferry":
+        return get_track_ferry_response(intent)
+    elif intent_name == "Four_Hour_Trend":
+        return get_four_hour_trend_response()
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
