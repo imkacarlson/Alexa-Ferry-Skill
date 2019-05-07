@@ -43,18 +43,6 @@ def build_response(session_attributes, speechlet_response):
 
 
 # --------------- Functions that control the skill's behavior ------------------
-def get_test_response():
-    """ An example of a custom intent. Same structure as welcome message, just make sure to add this intent
-    in your alexa skill in order for it to work.
-    """
-    session_attributes = {}
-    card_title = "Test"
-    speech_output = "This is a test message"
-    reprompt_text = "You never responded to the first test message. Sending another one."
-    should_end_session = False
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
     add those here
@@ -64,7 +52,7 @@ def get_welcome_response():
     speech_output = "Welcome to your personal ferry tracker!"
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "I don't know if you heard me, welcome to your custom alexa application!"
+    reprompt_text = "Try asking me to make a prediction about the next ferry to Seattle."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -193,11 +181,24 @@ def get_four_hour_trend_response():
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))   
 
+def get_bainbridge_terminal_status_response():
+    session_attributes = {}
+    card_title = "Bainbridge Terminal Status"
+
+    lambda_client = boto3.client('lambda')
+    params = {}
+    lambda_response = lambda_client.invoke(FunctionName = "current-state-ferries", InvocationType = "RequestResponse", Payload = json.dumps(params))
+    speech_output = json.loads(lambda_response['Payload'].read().decode('utf-8'))["speech_output"]
+    
+    reprompt_text = "Ask me for a Bainbridge terminal status update."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session)) 
+
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Alexa Skills Kit sample. " \
-                    "Have a nice day! "
+    speech_output = "Have a nice trip!"
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
     return build_response({}, build_speechlet_response(
@@ -230,14 +231,14 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "test":
-        return get_test_response()
-    elif intent_name == "Next_Ferry":
+    if intent_name == "Next_Ferry":
         return get_next_ferry_response(intent)
     elif intent_name == "Track_Ferry":
         return get_track_ferry_response(intent)
     elif intent_name == "Four_Hour_Trend":
         return get_four_hour_trend_response()
+    elif intent_name == "Bainbridge_Terminal_Status":
+        return get_bainbridge_terminal_status_response()
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":

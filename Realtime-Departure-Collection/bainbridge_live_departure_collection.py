@@ -38,7 +38,7 @@ def write_to_file(scheduled_departure, actual_departure):
 
     intervals = int((scheduled_departure - last_departure).seconds / (5*60))
 
-    nans = [np.nan] * intervals
+    nans = [np.nan] * (1 if intervals == 0 else intervals)
 
     nans[0] = seconds_late_interpolated_list[-1]
     nans[-1] = seconds_late.seconds

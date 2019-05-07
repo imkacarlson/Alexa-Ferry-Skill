@@ -37,7 +37,7 @@ def getPrediction(starting_date, target):
 def make_prediction_write_to_s3(starting_date):
     # Getting target values
     s3_client = boto3.client('s3')
-    s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_data.json")
+    s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_interpolated_data.json")
     object_content = s3_response_object['Body'].read().decode('utf-8')
     departure_times = json.loads(object_content)
     
