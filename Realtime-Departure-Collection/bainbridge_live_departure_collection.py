@@ -9,6 +9,12 @@ import numpy as np
 import pandas as pd
 
 def write_to_file(scheduled_departure, actual_departure):
+    """Writes new departure to S3.
+
+    Keyword arguments:
+    scheduled_departure -- a datetime object that represents the scheduled departure
+    actual_departure -- a datetime object that represents the actual departure
+    """
     seconds_late = actual_departure - scheduled_departure
     
     # The boat was early
@@ -20,10 +26,13 @@ def write_to_file(scheduled_departure, actual_departure):
     
     s3_client = boto3.client('s3')
 
+    # Since I am using a model trained on interpolated data I need to pass it interpolated data.
+    # Doing the interpolation here so it does not need to be done when the model is invoked.
     s3_bainbridge_live_interpolated_json = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_interpolated_data.json")
     object_content = s3_bainbridge_live_interpolated_json['Body'].read().decode('utf-8')
     interpolated_departure_times = json.loads(object_content)
 
+    # This is where the un-interpolated data is stored.
     s3_bainbridge_live_json = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_data.json")
     object_content = s3_bainbridge_live_json['Body'].read().decode('utf-8')
     departure_times = json.loads(object_content)
@@ -36,8 +45,10 @@ def write_to_file(scheduled_departure, actual_departure):
     if not datetime.datetime.now().hour >= last_departure.hour:
         last_departure = last_departure - datetime.timedelta(days = 1)
 
+    # Number of 5 minute intervals between the scheduled and actual departure
     intervals = int((scheduled_departure - last_departure).seconds / (5*60))
 
+    # Setting up for interpolation
     nans = [np.nan] * (1 if intervals == 0 else intervals)
 
     nans[0] = seconds_late_interpolated_list[-1]
@@ -93,6 +104,8 @@ request_url = "http://www.wsdot.wa.gov/Ferries/API/Vessels/rest/vessellocations?
 lambda_client = boto3.client('lambda')
 params = {'departures': 1}
 
+# Infinite loop with sleep statements that invokes the ferry endpoint at each scheduled 
+# departure then waits for the actual departure time.
 while(True):
     lambda_response = lambda_client.invoke(FunctionName = "next-departure", InvocationType = "RequestResponse", Payload = json.dumps(params))
     departure_time = json.loads(lambda_response['Payload'].read().decode('utf-8'))["departures"]
