@@ -50,3 +50,8 @@ lambda-functions                  | This is the code for the python [AWS Lambda]
 
 
  # How it fits together into the Alexa Skill
+ Here is a basic diagram showing how things are organized into the Alexa Skill:
+
+ ![image](https://raw.githubusercontent.com/imkacarlson/Alexa-Ferry-Skill/master/docs/images/Alexa_Skill_Diagram.jpg)
+
+ More explanation about this diagram can be found on this [wiki page]().
