@@ -37,6 +37,8 @@ def milliseconds_to_time(ms):
     return datetime.datetime.utcfromtimestamp(int(ms)/1000) - datetime.timedelta(hours = 7)
 
 def ferry_state():
+    """Uses the WSF Vessels API to get information about the ferry in relation to the Bainbridge ferry terminal."""
+
     bucket_name = "#####"
     api_access_code = "#####"
     request_url = "http://www.wsdot.wa.gov/Ferries/API/Vessels/rest/vessellocations?apiaccesscode={}".format(api_access_code)

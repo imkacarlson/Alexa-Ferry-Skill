@@ -96,6 +96,11 @@ def get_next_ferry_response(intent):
         card_title, speech_output, reprompt_text, should_end_session))       
 
 def get_track_ferry_response(intent):
+    """Returns a object with information about the next number of predictions asked for by the user.
+
+    Keyword arguments:
+    intent  -- the intent JSON object
+    """
     d = datetime.datetime.now()
     session_attributes = {}
     card_title = "Next Ferry"
@@ -157,6 +162,8 @@ def get_track_ferry_response(intent):
         card_title, speech_output, reprompt_text, should_end_session))    
 
 def get_four_hour_trend_response():
+    """Returns a object with the average of the seconds late (or early) predictions over the next four hours."""
+
     session_attributes = {}
     card_title = "Four Hour Trend"
 
@@ -182,6 +189,7 @@ def get_four_hour_trend_response():
         card_title, speech_output, reprompt_text, should_end_session))   
 
 def get_bainbridge_terminal_status_response():
+    """Returns a object with information about where boats are in relation to the Bainbridge terminal."""
     session_attributes = {}
     card_title = "Bainbridge Terminal Status"
 

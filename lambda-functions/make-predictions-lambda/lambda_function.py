@@ -20,6 +20,11 @@ def lambda_handler(event, context):
         }
 
 def getPrediction(starting_date, target):
+    """Invokes the prediction model to get predictions starting at some date with specificed target data.
+
+    Keyword arguments:
+    starting_date -string representing the starting date
+    """
     endpoint_name = "bainbridge-ferry-predictor"
 
     client = boto3.client('sagemaker-runtime')
@@ -35,6 +40,11 @@ def getPrediction(starting_date, target):
     return response
 
 def make_prediction_write_to_s3(starting_date):
+    """Makes predictions starting at some date and saves it a file in S3.
+
+    Keyword arguments:
+    starting_date  -- string representation of the starting date
+    """
     # Getting target values
     s3_client = boto3.client('s3')
     s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_live_interpolated_data.json")
@@ -60,6 +70,12 @@ def make_prediction_write_to_s3(starting_date):
     s3.Bucket(bucket_name).put_object(Key="bainbridge_predictions/"+bainbridge_predictions_file_name, Body=predictions_json)
     
 def get_predictions(scheduled_departures, today = datetime.datetime.now() - datetime.timedelta(hours = 7)):
+    """Makes predictions for each of the departure in the scheduled departures list.
+
+    Keyword arguments:
+    starting_date  -- string representation of the starting date
+    today -- the current time (subtracting 7 because the Amazon servers are on Greenwich Mean Time and pacific time with daylight savings is 7 hours less than GMT.)
+    """
     
     s3_client = boto3.client('s3')
     s3_response_object = s3_client.get_object(Bucket=bucket_name, Key="bainbridge_predictions/"+bainbridge_predictions_file_name)
@@ -102,6 +118,7 @@ def get_predictions(scheduled_departures, today = datetime.datetime.now() - date
     return predictions_to_return
 
 def next_four_hours():
+    """Averages out the seconds late predictions over the next four hours."""
     # 5 minute intervals in 4 hours
     four_hours = (60/5) * 4
     
