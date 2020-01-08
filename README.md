@@ -54,4 +54,4 @@ lambda-functions                  | This is the code for the python [AWS Lambda]
 
  ![image](https://raw.githubusercontent.com/imkacarlson/Alexa-Ferry-Skill/master/docs/images/Alexa_Skill_Diagram.jpg)
 
- More explanation about this diagram can be found on this [wiki page]().
+ More explanation about this diagram can be found on this [wiki page](https://github.com/imkacarlson/Alexa-Ferry-Skill/wiki/Alexa-Skill-Diagram).
