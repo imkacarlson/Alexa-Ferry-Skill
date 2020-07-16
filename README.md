@@ -24,7 +24,7 @@ Hopefully I can provide some instruction on where to start if you are looking at
  3. Look at the `lambda-functions` directory and get a feel for what they are doing.
  4. Feel free to explore from there! Be sure to look at the description of directories below as you are exploring.
 
- # Breif description of directories
+ # Brief description of directories
 directory                         | description                                                                | dependencies
 ----------------------------------|----------------------------------------------------------------------------|----------------
 ARIMA                             | Contains a Jupyter Notebook with code I used to try and fit an ARIMA model to my data. This was never used in the final product.                | 'pandas', 'matplotlib', ['statsmodels'](https://www.statsmodels.org/devel/index.html)  
